@@ -8,7 +8,6 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       
-      // Determine if the user is on a protected route
       const isOnDashboard = nextUrl.pathname.startsWith("/dashboard") || 
                             nextUrl.pathname.startsWith("/teachers") || 
                             nextUrl.pathname.startsWith("/classes") || 
@@ -17,21 +16,20 @@ export const authConfig = {
                             nextUrl.pathname.startsWith("/billing");
 
       const isOnAdmin = nextUrl.pathname.startsWith("/admin");
-
-      // Define public routes that authenticated users shouldn't access (like login/register)
       const isOnAuth = nextUrl.pathname.startsWith("/login") || 
                        nextUrl.pathname.startsWith("/register");
 
       if (isOnAdmin) {
         const isSuperAdmin = auth?.user?.role === "SUPER_ADMIN" || auth?.user?.email === "sunil.cse.dev@gmail.com";
-        if (isLoggedIn && isSuperAdmin) return true;
-        return false; // Redirect others to login
-      } else if (isOnDashboard) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
-      } else if (isLoggedIn && isOnAuth) {
-        // Redirect authenticated users away from auth pages to dashboard
-        return Response.redirect(new URL("/dashboard", nextUrl));
+        return isLoggedIn && isSuperAdmin;
+      }
+      
+      if (isOnDashboard) {
+        return isLoggedIn;
+      }
+      
+      if (isLoggedIn && isOnAuth) {
+        return false; // This will trigger a redirect to the default dashboard via NextAuth internal logic if combined with a redirect, but for middleware it often means "not allowed here"
       }
       
       return true;
@@ -54,11 +52,14 @@ export const authConfig = {
         
         // Final fallback for organizationId corruption
         let orgId = token.organizationId;
-        if (typeof orgId === 'string' && orgId !== "[object Object]") {
-          session.user.organizationId = orgId;
-        } else if (orgId && typeof orgId === 'object' && (orgId as any).buffer) {
-          const bytes = Object.values((orgId as any).buffer) as number[];
-          session.user.organizationId = bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+        if (typeof orgId === 'string') {
+          session.user.organizationId = orgId === "[object Object]" ? "" : orgId;
+        } else if (orgId && typeof orgId === 'object') {
+          try {
+            session.user.organizationId = String(orgId);
+          } catch {
+            session.user.organizationId = "";
+          }
         } else {
           session.user.organizationId = "";
         }

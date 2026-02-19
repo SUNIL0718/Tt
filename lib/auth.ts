@@ -20,8 +20,12 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
           
           try {
             console.log(`DEBUG: Authorize attempt for email: ${email}`);
-            await connectToDatabase();
-            const user = await User.findOne({ email }).lean() as unknown as IUser;
+            const db = await connectToDatabase();
+            if (!db) {
+              throw new Error("Failed to connect to database");
+            }
+            
+            const user = await User.findOne({ email }).lean() as any;
             
             if (!user) {
               console.log(`DEBUG: Authorize - User NOT found for email: ${email}`);
@@ -39,20 +43,21 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             if (passwordsMatch) {
               return {
                 id: user._id.toString(),
-                name: user.name,
+                name: user.name || "",
                 email: user.email,
-                role: (user.role as string) || "ADMIN",
-                organizationId: user.organizationId ? String(user.organizationId) : undefined,
+                role: String(user.role || "ADMIN"),
+                organizationId: user.organizationId ? user.organizationId.toString() : "",
               };
             } else {
               console.log(`DEBUG: Authorize - Password mismatch for user: ${email}`);
             }
           } catch (dbError: any) {
-            console.error("DEBUG: Database error in authorize:", dbError.message);
-            return null;
+            console.error("DEBUG: Error in authorize function:", dbError);
+            throw new Error(dbError.message || "Authentication error");
           }
         } else {
           console.log('DEBUG: Authorize - Invalid credential format', parsedCredentials.error?.flatten().fieldErrors);
+          return null;
         }
 
         console.log('Invalid credentials');
