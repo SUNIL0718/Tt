@@ -50,10 +50,12 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
               };
             } else {
               console.log(`DEBUG: Authorize - Password mismatch for user: ${email}`);
+              return null;
             }
           } catch (dbError: any) {
             console.error("DEBUG: Error in authorize function:", dbError);
-            throw new Error(dbError.message || "Authentication error");
+            // Return null instead of throwing to avoid 500 Internal Server Error
+            return null;
           }
         } else {
           console.log('DEBUG: Authorize - Invalid credential format', parsedCredentials.error?.flatten().fieldErrors);

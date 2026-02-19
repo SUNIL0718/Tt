@@ -28,8 +28,9 @@ export const authConfig = {
         return isLoggedIn;
       }
       
-      if (isLoggedIn && isOnAuth) {
-        return false; // This will trigger a redirect to the default dashboard via NextAuth internal logic if combined with a redirect, but for middleware it often means "not allowed here"
+      if (isOnAuth) {
+        if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
+        return true;
       }
       
       return true;
