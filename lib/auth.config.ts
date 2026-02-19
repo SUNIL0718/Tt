@@ -93,4 +93,6 @@ export const authConfig = {
     }
   },
   providers: [], // Configured in auth.ts
+  secret: process.env.AUTH_SECRET,
+  trustHost: true,
 } satisfies NextAuthConfig;
