@@ -24,6 +24,11 @@ if (!cached) {
 
 async function connectToDatabase() {
   if (!MONGODB_URI) {
+    // If we are in build phase, just log a warning and return null to prevent build failure
+    if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+      console.warn("Skipping MongoDB connection: DATABASE_URL is not defined in environment.");
+      return null;
+    }
     throw new Error(
       "Please define the DATABASE_URL environment variable inside .env.local"
     );
