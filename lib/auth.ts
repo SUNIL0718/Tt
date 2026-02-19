@@ -20,11 +20,18 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
           
           await connectToDatabase();
           const user = await User.findOne({ email }).lean() as unknown as IUser;
-          console.log(`DEBUG: Authorize found user ${email} with role:`, user?.role);
           
-          if (!user) return null;
+          if (!user) {
+            console.log(`DEBUG: Authorize - User NOT found for email: ${email}`);
+            return null;
+          }
+
+          console.log(`DEBUG: Authorize found user ${email} with role:`, user.role);
           
-          if (!user.hashedPassword) return null;
+          if (!user.hashedPassword) {
+            console.log(`DEBUG: Authorize - User ${email} has no hashedPassword`);
+            return null;
+          }
 
           const passwordsMatch = await bcrypt.compare(password, user.hashedPassword);
           if (passwordsMatch) {
@@ -32,10 +39,14 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
               id: user._id.toString(),
               name: user.name,
               email: user.email,
-              role: user.role as string,
+              role: (user.role as string) || "ADMIN",
               organizationId: user.organizationId ? String(user.organizationId) : undefined,
             };
+          } else {
+            console.log(`DEBUG: Authorize - Password mismatch for user: ${email}`);
           }
+        } else {
+          console.log('DEBUG: Authorize - Invalid credential format', parsedCredentials.error?.flatten().fieldErrors);
         }
 
         console.log('Invalid credentials');
