@@ -79,17 +79,23 @@ function EditPopup({ cellKey, slotLabel, day, current, teachers, subjects, rooms
       const popupHeight = 420; // Increased height for day selector
       const popupWidth = 300; // Approx width
       
-      let top = rect.bottom + window.scrollY + 4;
-      let left = rect.left + window.scrollX;
+      let top = rect.bottom + 4;
+      let left = rect.left;
       
       // Keep within horizontal viewport
       if (left + popupWidth > window.innerWidth) {
         left = window.innerWidth - popupWidth - 20;
       }
+      if (left < 10) left = 10;
       
       // Keep within vertical viewport (flip up if needed)
       if (rect.bottom + popupHeight > window.innerHeight) {
-         top = rect.top + window.scrollY - popupHeight - 4;
+         top = rect.top - popupHeight - 4;
+         // Prevent going off top of screen
+         if (top < 10) {
+           // Put it in the middle of the screen if it can't fit above or below perfectly
+           top = (window.innerHeight - popupHeight) / 2;
+         }
       }
 
       setPos({ top, left });
