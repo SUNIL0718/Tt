@@ -71,3 +71,30 @@ export async function deletePeriodTiming(id: string) {
     return { message: "Database Error." };
   }
 }
+
+export async function setDefaultPeriodTiming(id: string) {
+  const session = await auth();
+  if (!session?.user?.organizationId) return { message: "Unauthorized" };
+
+  try {
+    await connectToDatabase();
+    
+    // First, unset any existing default
+    await PeriodTiming.updateMany(
+      { organizationId: session.user.organizationId },
+      { isDefault: false }
+    );
+
+    // Then, set the chosen one as default
+    await PeriodTiming.findOneAndUpdate(
+      { _id: id, organizationId: session.user.organizationId },
+      { isDefault: true }
+    );
+
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard/timetable");
+    return { message: "Schedule set as default." };
+  } catch (error) {
+    return { message: "Database Error." };
+  }
+}

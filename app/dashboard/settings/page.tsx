@@ -2,12 +2,17 @@ import { auth } from "@/lib/auth";
 import connectToDatabase from "@/lib/db";
 import PeriodTiming from "@/lib/models/PeriodTiming";
 import PeriodTimingForm from "@/components/timetable/period-timing-form";
-import { deletePeriodTiming } from "@/actions/period-timing";
-import { Clock, Calendar, Trash2 } from "lucide-react";
+import { deletePeriodTiming, setDefaultPeriodTiming } from "@/actions/period-timing";
+import { Clock, Calendar, Trash2, CheckCircle } from "lucide-react";
 
 async function deleteTimingAction(id: string) {
     "use server";
     await deletePeriodTiming(id);
+}
+
+async function setDefaultTimingAction(id: string) {
+    "use server";
+    await setDefaultPeriodTiming(id);
 }
 
 export default async function SettingsPage() {
@@ -66,11 +71,20 @@ export default async function SettingsPage() {
                                     {timing.slots.length} Slots Detected
                                 </div>
                             </div>
-                            <form action={deleteTimingAction.bind(null, timing._id.toString())}>
-                                <button className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </form>
+                            <div className="flex items-center gap-2">
+                                {!timing.isDefault && (
+                                    <form action={setDefaultTimingAction.bind(null, timing._id.toString())}>
+                                        <button className="p-2 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all" title="Set as Default">
+                                            <CheckCircle className="w-4 h-4" />
+                                        </button>
+                                    </form>
+                                )}
+                                <form action={deleteTimingAction.bind(null, timing._id.toString())}>
+                                    <button className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Delete Schedule">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         
                         <div className="space-y-2">

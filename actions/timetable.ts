@@ -68,8 +68,12 @@ export async function generateTimetableAction(formData: FormData) {
       Class.find(classFilter).lean(), // Filter classes by scope
       TeacherConstraint.find({ organizationId: orgId }).lean(),
       Room.find({ organizationId: orgId }).lean(),
-      PeriodTiming.findOne({ organizationId: orgId, isDefault: true }).lean(),
     ]);
+
+    let timing = await PeriodTiming.findOne({ organizationId: orgId, isDefault: true }).lean();
+    if (!timing) {
+      timing = await PeriodTiming.findOne({ organizationId: orgId }).sort({ createdAt: -1 }).lean();
+    }
 
     if (!timing) {
       console.warn("[GenerateAction] Validation failed: No timing defined");

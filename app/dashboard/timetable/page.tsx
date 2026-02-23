@@ -37,10 +37,12 @@ export default async function TimetablePage() {
   await connectToDatabase();
   const filter = (orgId && orgId !== "[object Object]") ? { organizationId: orgId } : {};
   
-  const [timetables, timingResult] = await Promise.all([
-    Timetable.find(filter).sort({ createdAt: -1 }).lean(),
-    PeriodTiming.findOne({ organizationId: orgId, isDefault: true }).lean()
-  ]);
+  const timetables = await Timetable.find(filter).sort({ createdAt: -1 }).lean();
+  let timingResult = await PeriodTiming.findOne({ organizationId: orgId, isDefault: true }).lean();
+  
+  if (!timingResult) {
+    timingResult = await PeriodTiming.findOne({ organizationId: orgId }).sort({ createdAt: -1 }).lean();
+  }
 
   const timing = timingResult as unknown as IPeriodTiming;
 
@@ -133,7 +135,9 @@ export default async function TimetablePage() {
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-slate-900 leading-tight">{timing.name}</h4>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Using Institution Default</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                        {timing.isDefault ? "Using Institution Default" : "Using Latest Schedule"}
+                                    </p>
                                 </div>
                             </div>
                         </div>
