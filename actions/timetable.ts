@@ -62,7 +62,7 @@ export async function generateTimetableAction(formData: FormData) {
        classFilter.departmentId = departmentId;
     }
 
-    const [teachers, subjects, classes, constraints, rooms, timing] = await Promise.all([
+    const [teachers, subjects, classes, constraints, rooms] = await Promise.all([
       Teacher.find({ organizationId: orgId }).lean(), // Fetch all teachers to allow cross-dept
       Subject.find({ organizationId: orgId }).lean(), // Fetch all subjects
       Class.find(classFilter).lean(), // Filter classes by scope
