@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Timetable Grid</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f4ff;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --primary: #6366f1;
+      --primary-light: #eef2ff;
+      --text: #1e293b;
+      --muted: #94a3b8;
+      --shadow: 0 4px 24px rgba(99,102,241,0.08);
+
+      /* Pastel day colors */
+      --mon: #fef3c7;
+      --tue: #d1fae5;
+      --wed: #dbeafe;
+      --thu: #fce7f3;
+      --fri: #ede9fe;
+      --sat: #ffedd5;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    /* ── Header ── */
+    .header {
+      max-width: 1400px;
+      margin: 0 auto 28px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-left h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-left p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    }
+    .btn-primary:hover { background: #4f46e5; transform: translateY(-1px); }
+
+    .btn-outline {
+      background: var(--surface);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    .btn-danger {
+      background: #fff0f0;
+      color: #ef4444;
+      border: 1.5px solid #fecaca;
+    }
+    .btn-danger:hover { background: #fee2e2; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── Wrapper ── */
+    .table-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: var(--surface);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0;
+      vertical-align: top;
+    }
+
+    /* Time column */
+    .time-col { width: 110px; }
+
+    /* Header row */
+    thead th {
+      padding: 16px 12px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+
+    thead th:first-child {
+      background: #f8fafc;
+      color: var(--muted);
+    }
+
+    thead th.day-mon { background: var(--mon); color: #92400e; }
+    thead th.day-tue { background: var(--tue); color: #065f46; }
+    thead th.day-wed { background: var(--wed); color: #1e40af; }
+    thead th.day-thu { background: var(--thu); color: #9d174d; }
+    thead th.day-fri { background: var(--fri); color: #5b21b6; }
+    thead th.day-sat { background: var(--sat); color: #9a3412; }
+
+    /* Time cell */
+    .time-cell {
+      background: #f8fafc;
+      padding: 14px 10px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .time-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .time-range {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    .period-num {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.6rem;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 20px;
+      margin-bottom: 4px;
+    }
+
+    /* Break row */
+    tr.break-row td {
+      background: #fffbeb;
+      text-align: center;
+      padding: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #b45309;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    tr.break-row td:first-child {
+      background: #fef3c7;
+    }
+
+    /* Editable cell */
+    .cell-content {
+      min-height: 80px;
+      padding: 10px;
+      outline: none;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.5;
+      cursor: text;
+      transition: background 0.15s;
+      width: 100%;
+      height: 100%;
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .cell-content:empty::before {
+      content: attr(data-placeholder);
+      color: #cbd5e1;
+      font-weight: 400;
+      font-size: 0.72rem;
+    }
+
+    .cell-content:focus {
+      background: var(--primary-light);
+      box-shadow: inset 0 0 0 2px var(--primary);
+    }
+
+    td.day-mon .cell-content:focus { background: #fef9ec; box-shadow: inset 0 0 0 2px #f59e0b; }
+    td.day-tue .cell-content:focus { background: #ecfdf5; box-shadow: inset 0 0 0 2px #10b981; }
+    td.day-wed .cell-content:focus { background: #eff6ff; box-shadow: inset 0 0 0 2px #3b82f6; }
+    td.day-thu .cell-content:focus { background: #fdf2f8; box-shadow: inset 0 0 0 2px #ec4899; }
+    td.day-fri .cell-content:focus { background: #f5f3ff; box-shadow: inset 0 0 0 2px #8b5cf6; }
+    td.day-sat .cell-content:focus { background: #fff7ed; box-shadow: inset 0 0 0 2px #f97316; }
+
+    /* Filled cell highlight */
+    td.day-mon:has(.cell-content:not(:empty)) { background: #fffbf0; }
+    td.day-tue:has(.cell-content:not(:empty)) { background: #f0fdf9; }
+    td.day-wed:has(.cell-content:not(:empty)) { background: #eff6ff; }
+    td.day-thu:has(.cell-content:not(:empty)) { background: #fdf4fb; }
+    td.day-fri:has(.cell-content:not(:empty)) { background: #f5f3ff; }
+    td.day-sat:has(.cell-content:not(:empty)) { background: #fff7ed; }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      max-width: 1400px;
+      margin: 16px auto 0;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-chip span { color: var(--primary); font-size: 1rem; }
+
+    /* ── Print styles ── */
+    @media print {
+      body { background: white; padding: 0; }
+      .header-actions, .stats-bar, #toast { display: none !important; }
+      .table-wrapper { box-shadow: none; border: 1px solid #ddd; border-radius: 0; }
+      .header { margin-bottom: 16px; }
+      .header-left h1 { -webkit-text-fill-color: #6366f1; }
+      .cell-content:empty::before { content: ''; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .table-wrapper { border-radius: 16px; overflow-x: auto; }
+      table { min-width: 700px; }
+      .header-left h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>📅 Weekly Timetable</h1>
+      <p id="subtitle">Click any cell to edit • Auto-saved to browser</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="clearAll()">🗑️ Clear All</button>
+      <button class="btn btn-outline" onclick="exportCSV()">📊 Export CSV</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / PDF</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <table id="timetable">
+      <thead>
+        <tr>
+          <th class="time-col">Time Slot</th>
+          <th class="day-mon">Monday</th>
+          <th class="day-tue">Tuesday</th>
+          <th class="day-wed">Wednesday</th>
+          <th class="day-thu">Thursday</th>
+          <th class="day-fri">Friday</th>
+          <th class="day-sat">Saturday</th>
+        </tr>
+      </thead>
+      <tbody id="timetable-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-chip">📝 Filled Cells: <span id="stat-filled">0</span></div>
+    <div class="stat-chip">📅 Total Slots: <span id="stat-total">0</span></div>
+    <div class="stat-chip">💾 Last Saved: <span id="stat-saved">Never</span></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const SLOTS = [
+      { label: 'Period 1', start: '08:00', end: '08:50', isBreak: false },
+      { label: 'Period 2', start: '08:50', end: '09:40', isBreak: false },
+      { label: 'Period 3', start: '09:40', end: '10:30', isBreak: false },
+      { label: 'Short Break', start: '10:30', end: '10:45', isBreak: true },
+      { label: 'Period 4', start: '10:45', end: '11:35', isBreak: false },
+      { label: 'Period 5', start: '11:35', end: '12:25', isBreak: false },
+      { label: 'Lunch Break', start: '12:25', end: '13:10', isBreak: true },
+      { label: 'Period 6', start: '13:10', end: '14:00', isBreak: false },
+      { label: 'Period 7', start: '14:00', end: '14:50', isBreak: false },
+      { label: 'Period 8', start: '14:50', end: '15:40', isBreak: false },
+    ];
+
+    const STORAGE_KEY = 'timetable_grid_v1';
+    let periodCount = 0;
+
+    function buildTable() {
+      const tbody = document.getElementById('timetable-body');
+      tbody.innerHTML = '';
+      periodCount = 0;
+
+      SLOTS.forEach((slot, idx) => {
+        const tr = document.createElement('tr');
+
+        if (slot.isBreak) {
+          tr.classList.add('break-row');
+          const timeTd = document.createElement('td');
+          timeTd.innerHTML = `⏸ ${slot.start} – ${slot.end}`;
+          tr.appendChild(timeTd);
+
+          const breakTd = document.createElement('td');
+          breakTd.colSpan = 6;
+          breakTd.innerHTML = `☕ ${slot.label}`;
+          tr.appendChild(breakTd);
+        } else {
+          periodCount++;
+          const pNum = periodCount;
+
+          // Time cell
+          const timeTd = document.createElement('td');
+          timeTd.className = 'time-cell';
+          timeTd.innerHTML = `
+            <div class="period-num">P${pNum}</div>
+            <div class="time-label">${slot.label}</div>
+            <div class="time-range">${slot.start} – ${slot.end}</div>
+          `;
+          tr.appendChild(timeTd);
+
+          // Day cells
+          DAYS.forEach(day => {
+            const td = document.createElement('td');
+            td.className = `day-${day}`;
+            td.dataset.slot = idx;
+            td.dataset.day = day;
+
+            const div = document.createElement('div');
+            div.className = 'cell-content';
+            div.contentEditable = 'true';
+            div.dataset.placeholder = `Add ${DAY_LABELS[DAYS.indexOf(day)]}...`;
+            div.dataset.key = `${day}_${idx}`;
+
+            // Load from localStorage
+            const saved = getSaved(day, idx);
+            if (saved) div.innerHTML = saved;
+
+            div.addEventListener('input', () => {
+              saveCell(day, idx, div.innerHTML);
+              updateStats();
+            });
+
+            div.addEventListener('keydown', (e) => {
+              // Tab to next cell
+              if (e.key === 'Tab') {
+                e.preventDefault();
+                const allCells = document.querySelectorAll('.cell-content');
+                const arr = Array.from(allCells);
+                const ci = arr.indexOf(div);
+                const next = arr[ci + (e.shiftKey ? -1 : 1)];
+                if (next) next.focus();
+              }
+            });
+
+            td.appendChild(div);
+            tr.appendChild(td);
+          });
+        }
+
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('stat-total').textContent = periodCount * 6;
+      updateStats();
+    }
+
+    /* ── Storage ── */
+    function getStore() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+      catch { return {}; }
+    }
+
+    function getSaved(day, slotIdx) {
+      return getStore()[`${day}_${slotIdx}`] || '';
+    }
+
+    function saveCell(day, slotIdx, value) {
+      const store = getStore();
+      store[`${day}_${slotIdx}`] = value;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+      const now = new Date();
+      document.getElementById('stat-saved').textContent =
+        now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /* ── Stats ── */
+    function updateStats() {
+      const cells = document.querySelectorAll('.cell-content');
+      let filled = 0;
+      cells.forEach(c => { if (c.textContent.trim()) filled++; });
+      document.getElementById('stat-filled').textContent = filled;
+    }
+
+    /* ── Clear All ── */
+    function clearAll() {
+      if (!confirm('Clear all timetable data? This cannot be undone.')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      document.querySelectorAll('.cell-content').forEach(c => c.innerHTML = '');
+      updateStats();
+      showToast('🗑️ Timetable cleared!');
+    }
+
+    /* ── Export CSV ── */
+    function exportCSV() {
+      const rows = [['Time Slot', 'Start', 'End', ...DAY_LABELS]];
+      let pNum = 0;
+
+      SLOTS.forEach((slot, idx) => {
+        if (slot.isBreak) {
+          rows.push([slot.label, slot.start, slot.end, ...Array(6).fill('— BREAK —')]);
+        } else {
+          pNum++;
+          const rowData = [slot.label, slot.start, slot.end];
+          DAYS.forEach(day => {
+            const key = `${day}_${idx}`;
+            const val = getStore()[key] || '';
+            rowData.push(val.replace(/<[^>]+>/g, '').trim());
+          });
+          rows.push(rowData);
+        }
+      });
+
+      const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `timetable_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('📊 CSV exported!');
+    }
+
+    /* ── Toast ── */
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    /* ── Init ── */
+    buildTable();
+
+    // Show last saved time if data exists
+    const existing = getStore();
+    if (Object.keys(existing).length > 0) {
+      document.getElementById('stat-saved').textContent = 'Restored ✓';
+    }
+  </script>
+</body>
+</html>
