@@ -43,7 +43,7 @@ async function check() {
   try {
     await transporter.verify();
     console.log("SMTP Connection successful!");
-  } catch (error) {
+  } catch (error: any) {
     console.error("SMTP Error:", error.message);
   }
 }
