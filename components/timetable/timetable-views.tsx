@@ -29,7 +29,7 @@ export default function TimetableViews({
 
   return (
     <div className="space-y-6">
-      <div className="flex rounded-xl bg-slate-100 p-1 w-fit border border-slate-200 shadow-sm">
+      <div className="print:hidden flex rounded-xl bg-slate-100 p-1 w-fit border border-slate-200 shadow-sm">
         <button
           onClick={() => setActiveTab("grid")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black transition-all ${

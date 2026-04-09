@@ -104,7 +104,7 @@ export default async function TimetableDetailPage({ params }: { params: Promise<
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="print:hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <Link href="/dashboard/timetable" className="inline-flex items-center gap-1 text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-600 mb-1">
             <ChevronLeft className="w-3 h-3" /> Back to Grids
